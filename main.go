@@ -8,6 +8,7 @@ import (
 	"github.com/teambition/rrule-go"
 	"log"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -68,10 +69,9 @@ func main() {
 		event := ical.NewEvent()
 		event.Props.SetDateTime(ical.PropDateTimeStart, startDay.AddDate(0, 0, (v.StartWeek-1)*7+v.WeekDay-1).Add(hduTimeList[v.StartSection-1]))
 		event.Props.SetDateTime(ical.PropDateTimeEnd, startDay.AddDate(0, 0, (v.StartWeek-1)*7+v.WeekDay-1).Add(hduTimeList[v.EndSection-1]).Add(time.Minute*45))
-		event.Props.SetText(ical.PropSummary, fmt.Sprintf("%s %s %s %s", v.CourseName, v.ClassRoom, v.TeacherName, v.CourseSchema))
 		event.Props.SetDateTime(ical.PropDateTimeStamp, startDay)
-		// 我不理解，但是不这么做这个go-ical库不让我过编译
-		event.Props.SetText(ical.PropUID, "")
+		event.Props.SetText(ical.PropSummary, fmt.Sprintf("%s %s %s %s", v.CourseName, v.ClassRoom, v.TeacherName, v.CourseSchema))
+		event.Props.SetText(ical.PropUID, v.CourseCode+strconv.Itoa(v.WeekDay)+strconv.Itoa(v.StartWeek))
 		count := v.EndWeek - v.StartWeek + 1
 		interval := 1
 		if v.Period != "" {
@@ -102,7 +102,9 @@ func main() {
 		log.Fatalln(err)
 		return
 	}
-	if err := os.WriteFile("./course.ics", buf.Bytes(), os.ModePerm); err != nil {
+	// yysy我不理解, 可能是库的问题
+	out := bytes.ReplaceAll(buf.Bytes(), []byte(";TZID=Local"), []byte(""))
+	if err := os.WriteFile("./course.ics", out, os.ModePerm); err != nil {
 		log.Fatalln(err)
 		return
 	}
